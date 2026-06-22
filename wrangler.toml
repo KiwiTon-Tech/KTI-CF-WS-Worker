@@ -13,7 +13,7 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["PriceHub"]
+new_sqlite_classes = ["PriceHub"]
 
 # -----------------------------------------------------------------------
 # Routes — api.kiwiton-investments.com MUST be orange-cloud (proxied) in
