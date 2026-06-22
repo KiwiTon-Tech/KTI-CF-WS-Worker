@@ -1,0 +1,38 @@
+name = "kti-ws-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Poll Alpaca REST every minute — replaces the Fly.io price publisher.
+[triggers]
+crons = ["* * * * *"]
+
+[durable_objects]
+bindings = [
+  { name = "PRICE_HUB", class_name = "PriceHub" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["PriceHub"]
+
+# -----------------------------------------------------------------------
+# Routes — api.kiwiton-investments.com MUST be orange-cloud (proxied) in
+# Cloudflare DNS for these Worker routes to intercept traffic.
+# REST requests pass through transparently to the origin (cPanel).
+# -----------------------------------------------------------------------
+[[routes]]
+pattern = "api.kiwiton-investments.com/ws/*"
+zone_name = "kiwiton-investments.com"
+
+[[routes]]
+pattern = "api.kiwiton-investments.com/internal/tick"
+zone_name = "kiwiton-investments.com"
+
+[vars]
+SYMBOLS_STOCKS = "SPY,AAPL,TSLA,MSFT,NVDA,AMZN,GOOGL,META"
+SYMBOLS_CRYPTO = "BTC/USD,ETH/USD"
+
+# Secrets (never committed) — set with wrangler secret put:
+#   wrangler secret put INTERNAL_SECRET
+#   wrangler secret put ALPACA_API_KEY
+#   wrangler secret put ALPACA_API_SECRET
