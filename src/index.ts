@@ -22,6 +22,8 @@
 
 import { MAX_SYMBOLS_PER_CLIENT, planSubscriptions } from "./subscriptions";
 
+const PRICE_HUB_NAME = "global-v2";
+
 export interface Env {
   PRICE_HUB: DurableObjectNamespace;
   INTERNAL_SECRET: string;
@@ -260,7 +262,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/ws/prices") {
-      const id = env.PRICE_HUB.idFromName("global");
+      const id = env.PRICE_HUB.idFromName(PRICE_HUB_NAME);
       const stub = env.PRICE_HUB.get(id);
       const doUrl = new URL(request.url);
       doUrl.pathname = "/ws";
@@ -275,7 +277,7 @@ export default {
       if (!env.INTERNAL_SECRET || auth !== env.INTERNAL_SECRET) {
         return new Response("Unauthorized", { status: 401 });
       }
-      const id = env.PRICE_HUB.idFromName("global");
+      const id = env.PRICE_HUB.idFromName(PRICE_HUB_NAME);
       const stub = env.PRICE_HUB.get(id);
       const doUrl = new URL(request.url);
       doUrl.pathname = "/tick";
@@ -283,7 +285,7 @@ export default {
     }
 
     if (url.pathname === "/health") {
-      const id = env.PRICE_HUB.idFromName("global");
+      const id = env.PRICE_HUB.idFromName(PRICE_HUB_NAME);
       const stub = env.PRICE_HUB.get(id);
       const doUrl = new URL(request.url);
       doUrl.pathname = "/stats";
@@ -310,7 +312,7 @@ export default {
     const ticks = [...stockTicks, ...cryptoTicks];
     if (ticks.length === 0) return;
 
-    const id = env.PRICE_HUB.idFromName("global");
+    const id = env.PRICE_HUB.idFromName(PRICE_HUB_NAME);
     const stub = env.PRICE_HUB.get(id);
 
     ctx.waitUntil(
