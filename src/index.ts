@@ -20,6 +20,8 @@
  *   { type: "unsubscribe", symbols: string[] }
  */
 
+import { MAX_SYMBOLS_PER_CLIENT, planSubscriptions } from "./subscriptions";
+
 export interface Env {
   PRICE_HUB: DurableObjectNamespace;
   INTERNAL_SECRET: string;
@@ -121,30 +123,49 @@ export class PriceHub implements DurableObject {
     if (!payload || typeof payload !== "object") return;
     if (!Array.isArray(payload.symbols)) return;
 
-    const symbols = (payload.symbols as unknown[])
-      .filter((s): s is string => typeof s === "string")
-      .map((s) => s.toUpperCase());
+    const requested = Array.from(
+      new Set(
+        (payload.symbols as unknown[])
+          .filter((symbol): symbol is string => typeof symbol === "string")
+          .map((symbol) => symbol.trim().toUpperCase()),
+      ),
+    );
 
     const clientSubs = this.clientSymbols.get(ws);
     if (!clientSubs) return;
 
     if (payload.type === "subscribe") {
-      for (const sym of symbols) {
-        clientSubs.add(sym);
-        if (!this.symbolClients.has(sym)) {
-          this.symbolClients.set(sym, new Set());
+      const { accepted, rejected } = planSubscriptions(
+        clientSubs,
+        payload.symbols as unknown[],
+      );
+      for (const symbol of accepted) {
+        clientSubs.add(symbol);
+        if (!this.symbolClients.has(symbol)) {
+          this.symbolClients.set(symbol, new Set());
         }
-        this.symbolClients.get(sym)!.add(ws);
+        this.symbolClients.get(symbol)!.add(ws);
       }
+      ws.send(
+        JSON.stringify({
+          type: "subscribed",
+          symbols: accepted,
+          rejected,
+          limit: MAX_SYMBOLS_PER_CLIENT,
+        }),
+      );
     } else if (payload.type === "unsubscribe") {
-      for (const sym of symbols) {
-        clientSubs.delete(sym);
-        const set = this.symbolClients.get(sym);
+      const removed: string[] = [];
+      for (const symbol of requested) {
+        clientSubs.delete(symbol);
+        const set = this.symbolClients.get(symbol);
         if (set) {
           set.delete(ws);
-          if (set.size === 0) this.symbolClients.delete(sym);
+          if (set.size === 0) this.symbolClients.delete(symbol);
         }
+        removed.push(symbol);
       }
+      ws.send(JSON.stringify({ type: "unsubscribed", symbols: removed }));
     }
   }
 
