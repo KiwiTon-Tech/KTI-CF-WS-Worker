@@ -18,18 +18,44 @@ Browser  ←→  wss://api.kiwiton-investments.com/ws/prices
 
 **No external publisher required.** The Worker's built-in `scheduled()` cron handler fires every minute, fetches the latest trade for each symbol from Alpaca REST, and fans out ticks to the `PriceHub` Durable Object which broadcasts to all subscribed WebSocket clients.
 
-The Durable Object (`PriceHub`) is a single global instance that:
+The Durable Object (`PriceHub`) is a single named coordination instance that:
 - Accepts WebSocket connections from browser clients
 - Tracks per-client symbol subscriptions (`subscribe` / `unsubscribe` frames)
+- Validates and deduplicates symbols and enforces a maximum of 25 subscriptions per client
+- Replies with `subscribed` / `unsubscribed` acknowledgements and structured rejections
 - Receives tick POSTs from the cron handler via `/internal/tick`
 - Broadcasts ticks to all clients subscribed to that symbol
+
+Subscription response example:
+
+```json
+{
+  "type": "subscribed",
+  "symbols": ["AAPL", "BTC/USD"],
+  "rejected": [{"symbol": "../../BAD", "reason": "invalid_symbol"}],
+  "limit": 25
+}
+```
+
+The frontend treats socket connectivity and per-symbol acknowledgement separately. Missing, rejected, or stale ticks trigger REST fallback.
 
 ## Prerequisites
 
 - [Cloudflare account](https://dash.cloudflare.com) with **Workers Paid plan** ($5/mo) — required for Durable Objects
 - `api.kiwiton-investments.com` must be **orange-cloud (proxied)** in Cloudflare DNS
-- [Node.js 18+](https://nodejs.org) and npm
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
+- [Node.js 24+](https://nodejs.org) and npm
+- Wrangler 4 (installed as a pinned dev dependency)
+
+## Verification and deployment
+
+```bash
+npm ci
+npm test
+npm run type-check
+npx wrangler deploy --dry-run
+```
+
+Pushes to `main` run the same checks in GitHub Actions and deploy with Wrangler using `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets. Production uses Cloudflare secrets for Alpaca and internal credentials; secrets are never stored in `wrangler.toml`.
 
 ## Setup
 
