@@ -57,7 +57,7 @@ async def connect(conn_id: int) -> dict:
                     frame = json.loads(
                         await asyncio.wait_for(ws.recv(), timeout=remaining)
                     )
-                except TimeoutError:
+                except asyncio.TimeoutError:
                     break
                 if frame.get("type") == "subscribed":
                     acked = True
