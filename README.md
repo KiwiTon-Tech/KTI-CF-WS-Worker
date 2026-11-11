@@ -55,7 +55,7 @@ npm run type-check
 npx wrangler deploy --dry-run
 ```
 
-Pushes to `main` run the same checks in GitHub Actions and deploy with Wrangler using `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets. Production uses Cloudflare secrets for Alpaca and internal credentials; secrets are never stored in `wrangler.toml`.
+Pull requests and pushes to `main` run the same checks in GitHub Actions. Deploys are manual (`npm run deploy`); CI does not deploy. Production uses Cloudflare secrets for Alpaca and internal credentials; secrets are never stored in `wrangler.toml`.
 
 ## Setup
 
