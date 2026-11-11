@@ -63,7 +63,7 @@ async def connect(conn_id: int) -> dict:
                     acked = True
                     rejected = frame.get("rejected") or []
                 elif "type" not in frame and "price" in frame:
-                    ticks.append(frame.get("symbol"))
+                    ticks.append(str(frame.get("symbol", "")).upper())
     except Exception as exc:  # noqa: BLE001 - report any connection failure
         return {"id": conn_id, "error": f"{type(exc).__name__}: {exc}", "ticks": ticks}
     return {"id": conn_id, "acked": acked, "rejected": rejected, "ticks": ticks}
