@@ -8,8 +8,12 @@ acks and rejections are reported separately.
 Usage:
     pip install websockets
     python scripts/load_test.py                     # production endpoint
-    WS_URL=ws://127.0.0.1:8787/ws/prices python scripts/load_test.py
     NUM_CONNECTIONS=20 WAIT_SECONDS=75 python scripts/load_test.py
+
+Local runs: ``wrangler dev`` does not fire the cron on its own. Start it with
+``npx wrangler dev --test-scheduled`` and, while the test is waiting, trigger a
+tick round with ``curl "http://127.0.0.1:8787/__scheduled?cron=*+*+*+*+*"``:
+    WS_URL=ws://127.0.0.1:8787/ws/prices python scripts/load_test.py
 
 Exits 0 when every connection received ticks, 1 otherwise.
 """
